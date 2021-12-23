@@ -1,0 +1,29 @@
+{
+ :tools/usage
+ {:ns-default tools-user.core.alpha}
+
+
+ :paths ["src/core"]
+
+
+ :deps
+ {
+  io.github.ajchemist/environment  {:mvn/version "2021.252.22741"}
+  io.github.ajchemist/user.java.io {:mvn/version "2021.351.9469"}
+  org.clojure/clojure              {:mvn/version "1.10.3"}
+  }
+
+
+ :aliases
+ {:test
+  {:extra-paths ["src/test"]
+   :extra-deps
+   {}}
+
+
+  :test-runner
+  {:extra-deps {io.github.cognitect-labs/test-runner {:git/tag "v0.5.0" :git/sha "b3fd0d2"}}
+   :main-opts  ["-m" "cognitect.test-runner" "-d" "src/test"]
+   :exec-fn    cognitect.test-runner.api/test
+   :exec-args  ["src/test"]}}
+ }

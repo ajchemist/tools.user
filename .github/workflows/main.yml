@@ -1,0 +1,70 @@
+name: Main CI
+
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+
+env:
+  clojure-cli: "1.10.3.1040"
+  library: io.github.ajchemist/tools.user
+
+
+jobs:
+  test:
+    if: "!(contains(github.event.head_commit.message, 'ci skip') || contains(github.event.head_commit.message, 'skip ci'))"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ "17" ]
+        clojure: [ "1.10" ]
+    name: test @ JDK = ${{ matrix.java }} CLJ = ${{ matrix.clojure }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Cache local maven repository
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/deps.edn') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - name: Cache gitlibs
+        uses: actions/cache@v2
+        with:
+          path: ~/.gitlibs
+          key: ${{ runner.os }}-gitlibs-${{ hashFiles('**/deps.edn') }}
+          restore-keys: |
+            ${{ runner.os }}-gitlibs-
+
+
+      - name: Setup java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java }}
+
+
+      - name: Set up clojure-cli
+        uses: DeLaGuardo/setup-clojure@master
+        with:
+          cli: ${{ env.clojure-cli }}
+
+
+      - name: Test runner
+        env:
+          TESTOPT: "-X:${{ matrix.clojure }}:provided:test:test-runner"
+        run: |
+          clojure $TESTOPT
+
+
+      - uses: 8398a7/action-slack@v3.5.0
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow,job,took # selectable (default: repo,message)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # optional
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+        if: always() # Pick up events even if the job fails or is canceled.
