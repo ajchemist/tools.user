@@ -7,28 +7,32 @@
 
 
 (defn ssh-keypairs-pass-name
-  [group name]
-  (str "ssh/keypairs/" group "/" name))
+  [id]
+  (str "ssh/keypairs/" id))
 
 
 (defn ssh-keygen-opts
-  [{:keys [group name file keypairs-dir]
+  ""
+  [{:keys [id file keypairs-dir]
     :or   {keypairs-dir (.getPath (jio/file (System/getProperty "user.home") ".ssh" "keypairs"))}
     :as   opts}]
-  (let [private-key-file     (or file (jio/file keypairs-dir (str group) (str name)))
+  (let [group                (namespace id)
+        name                 (name id)
+        private-key-file     (or file (jio/file keypairs-dir group name))
         _public-key-file     (jio/file (str (.getPath (jio/as-file private-key-file)) ".pub"))
-        pass-name            (ssh-keypairs-pass-name group name)
+        pass-name            (ssh-keypairs-pass-name id)
         passphrase-pass-name (str pass-name "/passphrase")
         passphrase           (pass/show passphrase-pass-name)
         passphrase           (if passphrase
                                passphrase
                                (do
+                                 (println "pass" "generate" passphrase-pass-name)
                                  (pass/generate passphrase-pass-name)
                                  (pass/show passphrase-pass-name)))]
     (-> opts
-      (dissoc :group :name :keypairs-dir)
+      (dissoc :id :keypairs-dir)
       (assoc :file private-key-file)
-      (update :comment #(or % (str group "/" name)))
+      (update :comment #(or % (str id)))
       (update :passphrase #(or % passphrase)))))
 
 
@@ -38,10 +42,11 @@
   - pass
   - gopass
   🔐"
-  [{:keys [group name] :as opts}]
+  [{:keys [id] :as opts}]
+  {:pre [(qualified-ident? id)]}
   (let [opts (ssh-keygen-opts opts)]
     (ssh/keygen opts)
-    (pass/fscopy (:file opts) (ssh-keypairs-pass-name group name))))
+    (pass/fscopy (:file opts) (ssh-keypairs-pass-name id))))
 
 
 (defn ssh-keygen-ed25519

@@ -7,8 +7,7 @@
 
 (comment
   (core/ssh-keygen
-    {:group      "test-group"
-     :name       "test-name"
+    {:id         'test-group/test-name
      :file       "/tmp/id_ed25519"
      :type       "ed25519"
      :passphrase "passphrase"
@@ -16,8 +15,7 @@
 
 
   (core/ssh-keygen
-    {:group     "github.com"
-     :name      "magneto-core"
+    {:id        'github.com/magneto-core
      :type      "ed25519"
      :overwrite true})
   )
