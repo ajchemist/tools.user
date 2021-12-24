@@ -1,0 +1,40 @@
+#+STARTUP: indent hideblocks
+#+TITLE: tools.user
+#+AUTHOR: ajchemist
+
+
+* Installation
+
+
+#+begin_src sh
+  clojure -Ttools install io.github.ajchemist/tools.user '{:git/sha "6a8317a297611b6cabb6f517ce2261b6f96763c7"}' :as tools.user
+#+end_src
+
+
+
+* ssh-keygen
+
+
+** keygen with automatic generated passphrase
+
+
+#+begin_src sh
+  clj -Ttools.user ssh-keygen-ed25519 :group $group :name $name
+#+end_src
+
+
+** keygen with user input passphrase
+
+
+#+begin_src sh
+  pass insert ssh/keypairs/$group/$name
+  clj -Ttools.user ssh-keygen-ed25519 :group $group :name $name
+#+end_src
+
+
+** install private-key on the fly
+
+
+#+begin_src sh
+  pass cat ssh/keypairs/$group/$user ~/.ssh/keypairs/$group/$user
+#+end_src
