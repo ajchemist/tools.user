@@ -14,7 +14,7 @@
 
 
 (defn ssh-keygen-opts
-  ""
+  "Return map of keygen options."
   [{:keys [id file keypairs-dir]
     :or   {keypairs-dir (.getPath (jio/file (System/getProperty "user.home") ".ssh" "keypairs"))}
     :as   opts}]
@@ -78,9 +78,11 @@
            keypairs-dir   (.getPath (jio/file (System/getProperty "user.home") ".ssh" "keypairs"))}}]
   (run!
     (fn [[id _]]
-      (pass/fscopy
-        (ssh-keypairs-pass-name id)
-        (jio/file keypairs-dir (namespace id) (name id))))
+      (try
+        (pass/fscopy
+          (ssh-keypairs-pass-name id)
+          (jio/file keypairs-dir (namespace id) (name id)))
+        (catch Throwable _)))
     (sort-by
       (fn [[id]] id)
       (:ssh.config/hosts (ssh.config/read-hosts-edn-file hosts-edn-file)))))
