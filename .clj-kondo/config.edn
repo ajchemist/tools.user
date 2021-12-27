@@ -1,4 +1,5 @@
-{:linters
+{
+ :linters
  {:unused-namespace
   {:exclude [
              clojure.java.io
@@ -27,4 +28,8 @@
 
 
   :skip-comments true
+
+
+  :clojure-lsp/unused-public-var {:level   :warning
+                                  :exclude #{tools-user.core.alpha}}
   }}
