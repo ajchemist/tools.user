@@ -7,11 +7,21 @@
 
 
 #+begin_src sh
-  clojure -Ttools install io.github.ajchemist/tools.user '{:git/sha "6a8317a297611b6cabb6f517ce2261b6f96763c7"}' :as tools.user
+  clojure -Ttools install io.github.ajchemist/tools.user '{:git/sha "4668853cd4c9bf9e8171c3e5b4c032c16ea958ce"}' :as tools.user
 #+end_src
 
 
-* ssh-keygen
+* ssh
+
+
+1. *passwordstore* is ssh private key store.
+   - fetch from *passwordstore*
+   - generate to *passwordstore*
+   - private key exists in =~/.ssh/keypairs= is just cache, using only for operation
+2. =~/.ssh/keypairs= is ssh public key store.
+
+
+** ssh-keygen
 
 
 #+begin_src sh
@@ -19,7 +29,7 @@
 #+end_src
 
 
-** keygen with automatic generated passphrase
+*** keygen with automatic generated passphrase
 
 
 #+begin_src sh
@@ -27,7 +37,7 @@
 #+end_src
 
 
-** keygen with user input passphrase
+*** keygen with user input passphrase
 
 
 #+begin_src sh
@@ -36,7 +46,7 @@
 #+end_src
 
 
-** install private-key on the fly
+*** install private-key on the fly
 
 
 #+begin_src sh
@@ -44,7 +54,15 @@
 #+end_src
 
 
-* .ssh/config
+** .ssh/config
+
+
+First read =~/.ssh/hosts.edn= and generate identity files
+
+
+#+begin_src sh
+  clojure -Ttools.user fetch-ssh-key-from-pass
+#+end_src
 
 
 Read =~/.ssh/hosts.edn= to generate =~/.ssh/config=.
