@@ -60,3 +60,8 @@
 (defn keygen-rsa4096
   [opts]
   (keygen (rsa4096-opts opts)))
+
+
+(defn fingerprint
+  [file]
+  (shell/exit! (jsh/sh "ssh-keygen" "-l" "-f" (.getPath (jio/as-file file)))))

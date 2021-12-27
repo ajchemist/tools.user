@@ -9,6 +9,10 @@
    ))
 
 
+(def key-file (File/createTempFile "key" ""))
+(def key-file-1 (File/createTempFile "key" ""))
+
+
 (deftest main
   (is
     (=
@@ -17,19 +21,23 @@
          :type    "rsa"
          :bits    4096
          :comment "COMMENT"})
-      ["-m" "PEM" "-t" "rsa" "-b" 4096 "-C" "COMMENT"]))
+      ["-m" "PEM" "-t" "rsa" "-b" "4096" "-C" "COMMENT"]))
 
 
-  (ssh/keygen-ed25519
-    {:file         (File/createTempFile "key" "")
-     :overwrite    true
-     :nopassphrase true})
+  (locking key-file
+    (ssh/keygen-ed25519
+      {:file         key-file
+       :overwrite    true
+       :nopassphrase true})
+    (ssh/fingerprint key-file))
 
 
-  (ssh/keygen-rsa4096
-    {:file         (File/createTempFile "key" "")
-     :overwrite    true
-     :nopassphrase true}))
+  (locking key-file-1
+    (ssh/keygen-rsa4096
+      {:file         key-file-1
+       :overwrite    true
+       :nopassphrase true})
+    (ssh/fingerprint key-file-1)))
 
 
 (comment

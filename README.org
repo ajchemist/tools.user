@@ -11,8 +11,12 @@
 #+end_src
 
 
-
 * ssh-keygen
+
+
+#+begin_src sh
+  clj -Ttools.user ssh-keygen
+#+end_src
 
 
 ** keygen with automatic generated passphrase
@@ -37,4 +41,31 @@
 
 #+begin_src sh
   pass cat ssh/keypairs/$group/$user ~/.ssh/keypairs/$group/$user
+#+end_src
+
+
+* .ssh/config
+
+
+Read =~/.ssh/hosts.edn= to generate =~/.ssh/config=.
+
+
+#+begin_src sh
+  clojure -Ttools.user generate-ssh-config-file
+#+end_src
+
+
+First read =~/.ssh/hosts.edn= and generate identity files
+
+
+#+begin_src sh
+  clojure -Ttools.user ssh-keygen-all
+#+end_src
+
+
+Both =ssh-keygen-all= and =generate-ssh-config-file=
+
+
+#+begin_src sh
+  clojure -Ttools.user setup-ssh
 #+end_src
