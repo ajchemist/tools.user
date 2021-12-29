@@ -79,6 +79,7 @@
 
 (defn generate-config-file
   [edn-file to]
+  (println "Writing ssh/config file ->" (.getPath (jio/as-file to)))
   (binding [*out* (jio/writer to)]
     (print-config-file
       (read-hosts-edn-file edn-file))))
