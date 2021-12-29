@@ -2,6 +2,7 @@
   (:require
    [clojure.string :as str]
    [clojure.java.io :as jio]
+   [tools-user.shell.alpha :as shell]
    [tools-user.shell.pass.alpha :as pass]
    [tools-user.shell.ssh.alpha :as ssh]
    [tools-user.ssh.config.alpha :as ssh.config]
@@ -76,6 +77,8 @@
            keypairs-dir]
     :or   {hosts-edn-file (jio/file (System/getProperty "user.home") ".ssh" "hosts.edn")
            keypairs-dir   (.getPath (jio/file (System/getProperty "user.home") ".ssh" "keypairs"))}}]
+  {:pre [(shell/find-executable "pass")
+         (shell/find-executable "gopass")]}
   (run!
     (fn [[id _]]
       (try
@@ -95,6 +98,8 @@
   not exist in passwordstore -> ssh-keygen -> fscopy key-file ssh/keypairs/$id"
   [{:keys [hosts-edn-file]
     :or   {hosts-edn-file (jio/file (System/getProperty "user.home") ".ssh" "hosts.edn")}}]
+  {:pre [(shell/find-executable "pass")
+         (shell/find-executable "gopass")]}
   (run!
     (fn [[id {:keys [:ssh.key/type
                     :ssh.key/bits
@@ -103,17 +108,17 @@
              :or   {type   "ed25519"
                     format "PEM"}}]]
       (let [pass-name (ssh-keypairs-pass-name id)]
-         (if (nil? (pass/show pass-name))
-           (let [opts {:id        id
-                       :format    format
-                       :type      type
-                       :bits      bits
-                       :rounds    rounds
-                       :overwrite true}
-                 opts (case (name type)
-                        "ed25519" (ssh/ed25519-opts opts)
-                        "rsa"     (ssh/rsa4096-opts opts)
-                        opts)]
+        (if (nil? (pass/show pass-name))
+          (let [opts {:id        id
+                      :format    format
+                      :type      type
+                      :bits      bits
+                      :rounds    rounds
+                      :overwrite true}
+                opts (case (name type)
+                       "ed25519" (ssh/ed25519-opts opts)
+                       "rsa"     (ssh/rsa4096-opts opts)
+                       opts)]
             (ssh-keygen opts))
           (println "[skip] pass exists:" pass-name))))
     (sort-by
@@ -123,6 +128,8 @@
 
 (defn setup-ssh
   [{:as opts}]
+  {:pre [(shell/find-executable "pass")
+         (shell/find-executable "gopass")]}
   (fetch-ssh-key-from-pass opts)
   (ssh-keygen-all opts)
   (generate-ssh-config-file opts))
