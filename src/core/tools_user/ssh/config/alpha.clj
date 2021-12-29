@@ -22,7 +22,7 @@
 
 (s/def :ssh.config/preamble (s/coll-of :ssh/config))
 (s/def :ssh.config/postamble (s/coll-of :ssh/config))
-(s/def :ssh.config/hosts (s/map-of qualified-ident? (s/keys :req [:ssh/config])))
+(s/def :ssh.config/hosts (s/map-of qualified-ident? (s/keys :opt [:ssh/config])))
 (s/def :ssh.hosts/edn (s/keys :opt [:ssh.config/preamble
                                     :ssh.config/postamble
                                     :ssh.config/hosts]))
@@ -59,9 +59,11 @@
     (:ssh.config/preamble hosts))
   (print-config-blocks
     (into []
-      (map
-        (fn [[_ {:keys [:ssh/config]}]]
-          config))
+      (comp
+        (map
+          (fn [[_ {:keys [:ssh/config]}]]
+            config))
+        (remove nil?))
       (sort-by
         (fn [[id]] id)
         (:ssh.config/hosts hosts))))
