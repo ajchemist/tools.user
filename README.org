@@ -7,7 +7,7 @@
 
 
 #+begin_src sh
-  clojure -Ttools install io.github.ajchemist/tools.user '{:git/sha "4668853cd4c9bf9e8171c3e5b4c032c16ea958ce"}' :as tools.user
+  clojure -Ttools install io.github.ajchemist/tools.user '{:git/sha "8b099f08e06bffaf58364c93c4d55a694a093052"}' :as tools.user
 #+end_src
 
 
