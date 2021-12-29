@@ -22,7 +22,7 @@
   [command-name]
   (some
     (fn [dir]
-      (let [f (jio/file dir command-name)]
+      (let [f (.getCanonicalFile (jio/file dir command-name))]
         (and (u.jio/file? f)
              (u.jio/executable? f)
              (.getPath f))))
