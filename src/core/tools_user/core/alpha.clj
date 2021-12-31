@@ -88,11 +88,11 @@
         (catch Throwable _)))
     (sort-by
       (fn [[id]] id)
-      (:ssh.config/hosts (ssh.config/read-hosts-edn-file hosts-edn-file)))))
+      (:ssh/keypairs (ssh.config/read-hosts-edn-file hosts-edn-file)))))
 
 
 (defn ssh-keygen-all
-  ":ssh.config/hosts $id -> passwordstore existency test
+  ":ssh/keypairs $id -> passwordstore existency test
 
   private-key exists in passwordstore -> do nothing
   not exist in passwordstore -> ssh-keygen -> fscopy key-file ssh/keypairs/$id"
@@ -123,7 +123,7 @@
           (println "[skip] pass exists:" pass-name))))
     (sort-by
       (fn [[id]] id)
-      (:ssh.config/hosts (ssh.config/read-hosts-edn-file hosts-edn-file)))))
+      (:ssh/keypairs (ssh.config/read-hosts-edn-file hosts-edn-file)))))
 
 
 (defn setup-ssh

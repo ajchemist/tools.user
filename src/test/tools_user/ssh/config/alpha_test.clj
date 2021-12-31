@@ -22,10 +22,9 @@
 
 
 (deftest main
-  (is
-    (s/explain
-      :ssh.hosts/edn
-      hosts-edn))
+  (s/explain
+    :ssh.hosts/edn
+    hosts-edn)
   (ssh.config/print-config-file hosts-edn))
 
 

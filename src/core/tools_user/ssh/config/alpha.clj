@@ -25,7 +25,8 @@
 (s/def :ssh.config/hosts (s/map-of qualified-ident? (s/keys :opt [:ssh/config])))
 (s/def :ssh.hosts/edn (s/keys :opt [:ssh.config/preamble
                                     :ssh.config/postamble
-                                    :ssh.config/hosts]))
+                                    :ssh.config/hosts
+                                    :ssh/keypairs]))
 
 
 (def ^:dynamic *block-separator* (str (System/getProperty "line.separator") (System/getProperty "line.separator")))
