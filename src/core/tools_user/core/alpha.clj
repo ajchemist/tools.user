@@ -104,7 +104,8 @@
     (fn [[id {:keys [:ssh.key/type
                     :ssh.key/bits
                     :ssh.key/rounds
-                    :ssh.key/format]
+                    :ssh.key/format
+                    :ssh.key/comment]
              :or   {type   "ed25519"
                     format "PEM"}}]]
       (let [pass-name (ssh-keypairs-pass-name id)]
@@ -114,7 +115,8 @@
                       :type      type
                       :bits      bits
                       :rounds    rounds
-                      :overwrite true}
+                      :overwrite true
+                      :comment   comment}
                 opts (case (name type)
                        "ed25519" (ssh/ed25519-opts opts)
                        "rsa"     (ssh/rsa4096-opts opts)
