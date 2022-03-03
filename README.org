@@ -87,3 +87,11 @@ Both =ssh-keygen-all= and =generate-ssh-config-file=
 #+begin_src sh
   clojure -Ttools.user setup-ssh
 #+end_src
+
+
+** .ssh/authorized_keys
+
+
+#+begin_src sh
+  cat ~/.ssh/keypairs/$group/$name.pub | ssh $host "cat - >> ~/.ssh/authorized_keys"
+#+end_src
