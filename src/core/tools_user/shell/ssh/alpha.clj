@@ -40,7 +40,6 @@
 (defn rsa4096-opts
   [opts]
   (assoc opts
-    :rounds 100
     :type "rsa"
     :bits 4096))
 

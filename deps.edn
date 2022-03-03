@@ -8,7 +8,6 @@
 
  :deps
  {
-  io.github.ajchemist/environment  {:mvn/version "2021.252.22741"}
   io.github.ajchemist/user.java.io {:mvn/version "2021.351.9469"}
   org.clojure/clojure              {:mvn/version "1.10.3"}
   }
