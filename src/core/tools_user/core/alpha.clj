@@ -121,6 +121,7 @@
   (run!
     (fn [{:keys [:ssh.keygen/file :pass/pass-name]}]
       (try
+        (jio/make-parents (jio/as-file file))
         (pass/fscopy
           (ssh-keypair-pass-name pass-name)
           (jio/file file))
