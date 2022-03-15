@@ -48,7 +48,7 @@
           :else               (ssh-keypair-pass-name (str (str/join "/" (str/split (namespace id) #"\.")) "/" (name id))))))))
 
 
-(defn ssh-keygen
+(defn- ssh-keygen-1
   "Dependencies:
   - ssh-keygen
   - pass
@@ -92,6 +92,11 @@
         (pass/fscopy file pass-name)))))
 
 
+(defn ssh-keygen
+  [{:as opts}]
+  (ssh-keygen-1 (prep-ssh-keypair-options [(:ssh.key/id opts) (dissoc opts :ssh.key/id)])))
+
+
 ;; ** Generate ~/.ssh/config
 
 
@@ -132,7 +137,7 @@
   ":ssh/keypairs passwordstore existency test
 
   private-key exists in passwordstore -> do nothing
-  not exist in passwordstore -> ssh-keygen -> fscopy key-file ssh/keypairs/:pass/pass-name"
+  not exist in passwordstore -> ssh-keygen-1 -> fscopy key-file ssh/keypairs/:pass/pass-name"
   [{:keys [hosts-edn-file]
     :or   {hosts-edn-file (jio/file (System/getProperty "user.home") ".ssh" "hosts.edn")}}]
   {:pre [(shell/find-executable "pass")
@@ -146,7 +151,7 @@
         (do
           (when overwrite
             (println "[overwrite]:" pass-name))
-          (ssh-keygen options))))
+          (ssh-keygen-1 options))))
     (->> (:ssh/keypairs (ssh.config/read-hosts-edn-file hosts-edn-file))
       (map prep-ssh-keypair-options)
       (sort-by (fn [{:keys [:ssh.key/id]}] id)))))

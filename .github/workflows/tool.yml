@@ -67,7 +67,7 @@ jobs:
 
       - name: Prepare ssh-deploy job
         run: |
-          clojure -Ttools.user ssh-keygen :ssh.key/id test/sample :pass/skip? true :ssh.keygen/file '"/home/runner/.ssh/keypairs/test/sample"' :ssh.keygen/nopassphrase true :ssh.keygen/type '"rsa"' :ssh.keygen/format '"PEM"' :ssh.keygen/comment '"This is a comment of key"'
+          clojure -Ttools.user ssh-keygen :ssh.key/id test/sample :pass/skip? true :ssh.keygen/nopassphrase true :ssh.keygen/type '"rsa"' :ssh.keygen/format '"PEM"' :ssh.keygen/comment '"This is a comment of key"'
           cat ~/.ssh/keypairs/test/sample.pub >> ~/.ssh/authorized_keys
           chmod 600 ~/.ssh/authorized_keys
           echo 'ssh_private_key<<EOF' >> $GITHUB_ENV
