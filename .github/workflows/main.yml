@@ -3,13 +3,21 @@ name: Main CI
 
 on:
   push:
-    branches: [ master ]
+    paths:
+      - '.github/workflows/main.yml'
+      - 'src/core/**/*.clj'
+      - 'src/core/**/*.cljs'
+      - 'src/core/**/*.cljc'
+    branches:
+      - master
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
 
 
 env:
-  clojure-cli: "1.10.3.1040"
+  clojure-cli: "1.10.3.1087"
+  java-version: '17'
   library: io.github.ajchemist/tools.user
 
 
@@ -19,9 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ "17" ]
         clojure: [ "1.10" ]
-    name: test @ JDK = ${{ matrix.java }} CLJ = ${{ matrix.clojure }}
+    name: test @ CLJ = ${{ matrix.clojure }}
     steps:
       - uses: actions/checkout@v2
       - name: Cache local maven repository
@@ -44,7 +51,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
-          java-version: ${{ matrix.java }}
+          java-version: ${{ env.java-version }}
 
 
       - name: Set up clojure-cli
@@ -60,11 +67,8 @@ jobs:
           clojure $TESTOPT
 
 
-      - uses: 8398a7/action-slack@v3.5.0
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author,action,eventName,ref,workflow,job,took # selectable (default: repo,message)
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # optional
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+      - name: Discord action job digest notification
+        uses: sarisia/actions-status-discord@v1
         if: always() # Pick up events even if the job fails or is canceled.
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
