@@ -9,6 +9,9 @@
    ))
 
 
+(def ssh-default-keypairs-dir (jio/file (System/getProperty "user.home") ".ssh" "keypairs"))
+
+
 (defn ssh-keypairs-pass-name
   [id]
   (str "ssh/keypairs/" id))
@@ -17,7 +20,7 @@
 (defn ssh-keygen-opts
   "Return map of keygen options."
   [{:keys [id file keypairs-dir]
-    :or   {keypairs-dir (.getPath (jio/file (System/getProperty "user.home") ".ssh" "keypairs"))}
+    :or   {keypairs-dir (.getPath ssh-default-keypairs-dir)}
     :as   opts}]
   (let [group                (namespace id)
         name                 (name id)
@@ -39,6 +42,23 @@
       (update :passphrase #(or % passphrase)))))
 
 
+(defn ssh-keygen-nopassphrase-opts
+  "Return map of keygen options."
+  [{:keys [id file keypairs-dir]
+    :or   {keypairs-dir (.getPath ssh-default-keypairs-dir)}
+    :as   opts}]
+  (let [group                (namespace id)
+        name                 (name id)
+        private-key-file     (or file (jio/file keypairs-dir group name))
+        _public-key-file     (jio/file (str (.getPath (jio/as-file private-key-file)) ".pub"))]
+    (-> opts
+      (dissoc :id :keypairs-dir)
+      (assoc
+        :file private-key-file
+        :nopassphrase true)
+      (update :comment #(or % (str id))))))
+
+
 (defn ssh-keygen
   "Dependencies:
   - ssh-keygen
@@ -50,6 +70,18 @@
   (let [opts (ssh-keygen-opts opts)]
     (ssh/keygen opts)
     (pass/fscopy (:file opts) (ssh-keypairs-pass-name id))))
+
+
+(defn ssh-keygen-nopassphrase
+  "Dependencies:
+  - ssh-keygen
+  - pass
+  - gopass
+  🔐"
+  [{:keys [id] :as opts}]
+  {:pre [(qualified-ident? id)]}
+  (let [opts (ssh-keygen-nopassphrase-opts opts)]
+    (ssh/keygen opts)))
 
 
 (defn ssh-keygen-ed25519

@@ -1,16 +1,13 @@
-name: Main CI
+name: Tools Test CI
 
 
 on:
   push:
     paths:
-      - '.github/workflows/main.yml'
+      - '.github/workflows/tool.yml'
       - 'src/core/**/*.clj'
       - 'src/core/**/*.cljs'
       - 'src/core/**/*.cljc'
-      - 'src/test/**/*.clj'
-      - 'src/test/**/*.cljs'
-      - 'src/test/**/*.cljc'
     branches:
       - master
   pull_request:
@@ -63,11 +60,36 @@ jobs:
           cli: ${{ env.clojure-cli }}
 
 
-      - name: Test runner
-        env:
-          TESTOPT: "-X:${{ matrix.clojure }}:provided:test:test-runner"
+      - name: Install Tools
         run: |
-          clojure $TESTOPT
+          clojure -Ttools install io.github.ajchemist/tools.user '{:git/sha "${{ github.sha }}"}' :as tools.user
+
+
+      - name: Prepare ssh-deploy job
+        run: |
+          clojure -Ttools.user ssh-keygen-nopassphrase :id test/sample :type '"rsa"' :bits 4096 :format '"PEM"' :comment '"This is a comment of key"'
+          cat ~/.ssh/keypairs/test/sample.pub >> ~/.ssh/authorized_keys
+          chmod 600 ~/.ssh/authorized_keys
+          echo 'ssh_private_key<<EOF' >> $GITHUB_ENV
+          cat ~/.ssh/keypairs/test/sample >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
+          echo "whoami=$(whoami)" >> $GITHUB_ENV
+          mkdir target
+          cp ~/.ssh/keypairs/test/sample.pub target/
+          cat /etc/ssh/sshd_config
+          systemctl status ssh
+          mkdir "${{ github.workspace }}/tmp"
+
+
+      - name: Test ssh-deploy job
+        uses: easingthemes/ssh-deploy@v2.2.11
+        env:
+          SSH_PRIVATE_KEY: ${{ env.ssh_private_key }}
+          ARGS: "-rltgoDzvO"
+          SOURCE: "target/"
+          REMOTE_HOST: "localhost"
+          REMOTE_USER: ${{ env.whoami }}
+          TARGET: "${{ github.workspace }}/tmp"
 
 
       - name: Discord action job digest notification
