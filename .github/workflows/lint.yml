@@ -3,9 +3,17 @@ name: Lint
 
 on:
   push:
-    branches: [ master ]
+    paths:
+      - '.github/workflows/lint.yml'
+      - 'src/core/**/*.clj'
+      - 'src/core/**/*.cljs'
+      - 'src/core/**/*.cljc'
+    branches:
+      - master
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
+
 
 
 env:
@@ -19,20 +27,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      # - uses: DeLaGuardo/clojure-lint-action@f712330e03eec4daa36da7045213190083aca4dd
-      #   with:
-      #     clj-kondo-args: --lint src # --config .clj-kondo/config.edn
-      #     # check-name is optional
-      #     check-name: This is a report name
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup clj-kondo
         uses: DeLaGuardo/setup-clj-kondo@master
         with:
-          version: '2021.12.16'
+          version: '2022.03.04'
       - name: Lint
         run: |
           clj-kondo --lint src/core
           # --config .clj-kondo/config.edn
+      - name: Discord action job digest notification
+        uses: sarisia/actions-status-discord@v1
+        if: always() # Pick up events even if the job fails or is canceled.
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
 
   eastwood:
