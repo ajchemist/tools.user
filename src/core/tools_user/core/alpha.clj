@@ -1,7 +1,10 @@
 (ns tools-user.core.alpha
   (:require
+   [clojure.stacktrace :as stacktrace]
+   [clojure.spec.alpha :as s]
    [clojure.string :as str]
    [clojure.java.io :as jio]
+   [tools-user.util :as util]
    [tools-user.shell.alpha :as shell]
    [tools-user.shell.pass.alpha :as pass]
    [tools-user.shell.ssh.alpha :as ssh]
@@ -10,53 +13,39 @@
 
 
 (def ssh-default-keypairs-dir (jio/file (System/getProperty "user.home") ".ssh" "keypairs"))
+(def ^:const +ssh-keypair-pass-name-prefix+ "ssh/keypairs/")
 
 
-(defn ssh-keypairs-pass-name
-  [id]
-  (str "ssh/keypairs/" id))
+;;
+;; - hosts.edn
+;; - ssh-keygen command-line
+;; - pass, gopass command-line
 
 
-(defn ssh-keygen-opts
-  "Return map of keygen options."
-  [{:keys [id file keypairs-dir]
-    :or   {keypairs-dir (.getPath ssh-default-keypairs-dir)}
-    :as   opts}]
-  (let [group                (namespace id)
-        name                 (name id)
-        private-key-file     (or file (jio/file keypairs-dir group name))
-        _public-key-file     (jio/file (str (.getPath (jio/as-file private-key-file)) ".pub"))
-        pass-name            (ssh-keypairs-pass-name id)
-        passphrase-pass-name (str pass-name "/passphrase")
-        passphrase           (pass/show passphrase-pass-name)
-        passphrase           (if passphrase
-                               passphrase
-                               (do
-                                 (println "pass" "generate" passphrase-pass-name)
-                                 (pass/generate passphrase-pass-name)
-                                 (pass/show passphrase-pass-name)))]
-    (-> opts
-      (dissoc :id :keypairs-dir)
-      (assoc :file private-key-file)
-      (update :comment #(or % (str id)))
-      (update :passphrase #(or % passphrase)))))
+(defn- ^:private ssh-keypair-pass-name
+  [pass-name]
+  (if (str/starts-with? pass-name +ssh-keypair-pass-name-prefix+)
+    pass-name
+    (str +ssh-keypair-pass-name-prefix+ (util/strip-left-slash pass-name))))
 
 
-(defn ssh-keygen-nopassphrase-opts
-  "Return map of keygen options."
-  [{:keys [id file keypairs-dir]
-    :or   {keypairs-dir (.getPath ssh-default-keypairs-dir)}
-    :as   opts}]
-  (let [group                (namespace id)
-        name                 (name id)
-        private-key-file     (or file (jio/file keypairs-dir group name))
-        _public-key-file     (jio/file (str (.getPath (jio/as-file private-key-file)) ".pub"))]
-    (-> opts
-      (dissoc :id :keypairs-dir)
-      (assoc
-        :file private-key-file
-        :nopassphrase true)
-      (update :comment #(or % (str id))))))
+(defn ^:private prep-ssh-keypair-options
+  [[id {:as opts}]]
+  {:pre [(qualified-ident? id)]}
+  (-> opts
+    (assoc :ssh.key/id id)
+    (update :ssh.keygen/file
+      (fn [file]
+        (if (string? file)
+          (if (util/absolute-path? file)
+            file
+            (.getPath (jio/file ssh-default-keypairs-dir file)))
+          (.getPath (apply jio/file ssh-default-keypairs-dir (conj (str/split (namespace id) #"\.")  (name id)))))))
+    (update :pass/pass-name
+      (fn [pass-name]
+        (cond
+          (string? pass-name) (ssh-keypair-pass-name pass-name)
+          :else               (ssh-keypair-pass-name (str (str/join "/" (str/split (namespace id) #"\.")) "/" (name id))))))))
 
 
 (defn ssh-keygen
@@ -65,33 +54,45 @@
   - pass
   - gopass
   🔐"
-  [{:keys [id] :as opts}]
+  [{:keys
+    [:ssh.key/id
+     :ssh.keygen/type
+     :ssh.keygen/format
+     :ssh.keygen/file
+     :ssh.keygen/nopassphrase
+     :pass/pass-name]
+    :as opts}]
   {:pre [(qualified-ident? id)]}
-  (let [opts (ssh-keygen-opts opts)]
-    (ssh/keygen opts)
-    (pass/fscopy (:file opts) (ssh-keypairs-pass-name id))))
+  (as-> {:type      (or type "ed25519")
+         :format    (or format "PEM")
+         :rounds    (:ssh.keygen/rounds opts)
+         :bits      (:ssh.keygen/bits opts)
+         :file      file
+         :comment   (:ssh.keygen/comment opts)
+         :overwrite true}
+    $
+    (case (:type $)
+      "ed25519" (ssh/ed25519-opts $)
+      "rsa"     (ssh/rsa4096-opts $)
+      $)
+    (if nopassphrase
+      (assoc $ :nopassphrase true)
+      (let [passphrase-pass-name (str pass-name "/passphrase")
+            passphrase           (pass/show passphrase-pass-name)
+            passphrase           (if passphrase
+                                   passphrase
+                                   (do
+                                     (println "pass" "generate" passphrase-pass-name)
+                                     (pass/generate passphrase-pass-name)
+                                     (pass/show passphrase-pass-name)))]
+        (assoc $ :passphrase passphrase)))
+    (do
+      (ssh/keygen $)
+      (when-not (:pass/skip? opts)
+        (pass/fscopy file pass-name)))))
 
 
-(defn ssh-keygen-nopassphrase
-  "Dependencies:
-  - ssh-keygen
-  - pass
-  - gopass
-  🔐"
-  [{:keys [id] :as opts}]
-  {:pre [(qualified-ident? id)]}
-  (let [opts (ssh-keygen-nopassphrase-opts opts)]
-    (ssh/keygen opts)))
-
-
-(defn ssh-keygen-ed25519
-  [opts]
-  (ssh-keygen (ssh/ed25519-opts opts)))
-
-
-(defn ssh-keygen-rsa4096
-  [opts]
-  (ssh-keygen (ssh/rsa4096-opts opts)))
+;; ** Generate ~/.ssh/config
 
 
 (defn generate-ssh-config-file
@@ -104,67 +105,58 @@
     target))
 
 
-(defn fetch-ssh-key-from-pass
-  [{:keys [hosts-edn-file
-           keypairs-dir]
-    :or   {hosts-edn-file (jio/file (System/getProperty "user.home") ".ssh" "hosts.edn")
-           keypairs-dir   (.getPath (jio/file (System/getProperty "user.home") ".ssh" "keypairs"))}}]
-  {:pre [(shell/find-executable "pass")
-         (shell/find-executable "gopass")]}
-  (run!
-    (fn [[id _]]
-      (try
-        (pass/fscopy
-          (ssh-keypairs-pass-name id)
-          (jio/file keypairs-dir (namespace id) (name id)))
-        (catch Throwable _)))
-    (sort-by
-      (fn [[id]] id)
-      (:ssh/keypairs (ssh.config/read-hosts-edn-file hosts-edn-file)))))
+;; ** Fetch keypairs *passwordstore* -> *local(~/.ssh/keypairs)*
 
 
-(defn ssh-keygen-all
-  ":ssh/keypairs $id -> passwordstore existency test
-
-  private-key exists in passwordstore -> do nothing
-  not exist in passwordstore -> ssh-keygen -> fscopy key-file ssh/keypairs/$id"
+(defn fetch-ssh-keypairs-from-pass
   [{:keys [hosts-edn-file]
     :or   {hosts-edn-file (jio/file (System/getProperty "user.home") ".ssh" "hosts.edn")}}]
   {:pre [(shell/find-executable "pass")
          (shell/find-executable "gopass")]}
   (run!
-    (fn [[id {:keys [:ssh.key/type
-                    :ssh.key/bits
-                    :ssh.key/rounds
-                    :ssh.key/format
-                    :ssh.key/comment]
-             :or   {type   "ed25519"
-                    format "PEM"}}]]
-      (let [pass-name (ssh-keypairs-pass-name id)]
-        (if (nil? (pass/show pass-name))
-          (let [opts {:id        id
-                      :format    format
-                      :type      type
-                      :bits      bits
-                      :rounds    rounds
-                      :overwrite true
-                      :comment   comment}
-                opts (case (name type)
-                       "ed25519" (ssh/ed25519-opts opts)
-                       "rsa"     (ssh/rsa4096-opts opts)
-                       opts)]
-            (ssh-keygen opts))
-          (println "[skip] pass exists:" pass-name))))
-    (sort-by
-      (fn [[id]] id)
-      (:ssh/keypairs (ssh.config/read-hosts-edn-file hosts-edn-file)))))
+    (fn [{:keys [:ssh.keygen/file :pass/pass-name]}]
+      (try
+        (pass/fscopy
+          (ssh-keypair-pass-name pass-name)
+          (jio/file file))
+        (catch Throwable e (stacktrace/print-stack-trace e))))
+    (->> (:ssh/keypairs (ssh.config/read-hosts-edn-file hosts-edn-file))
+      (map prep-ssh-keypair-options)
+      (sort-by (fn [{:keys [:ssh.key/id]}] id)))))
+
+
+;; ** Keygen keypairs and push it -> *passwordstore*
+
+
+(defn ssh-keygen-all
+  ":ssh/keypairs passwordstore existency test
+
+  private-key exists in passwordstore -> do nothing
+  not exist in passwordstore -> ssh-keygen -> fscopy key-file ssh/keypairs/:pass/pass-name"
+  [{:keys [hosts-edn-file]
+    :or   {hosts-edn-file (jio/file (System/getProperty "user.home") ".ssh" "hosts.edn")}}]
+  {:pre [(shell/find-executable "pass")
+         (shell/find-executable "gopass")]}
+  (run!
+    (fn [{:keys [:ssh.keygen/overwrite
+                :pass/pass-name]
+         :as   options}]
+      (if (and (pass/show pass-name) (not overwrite))
+        (println "[skip] pass exists:" pass-name)
+        (do
+          (when overwrite
+            (println "[overwrite]:" pass-name))
+          (ssh-keygen options))))
+    (->> (:ssh/keypairs (ssh.config/read-hosts-edn-file hosts-edn-file))
+      (map prep-ssh-keypair-options)
+      (sort-by (fn [{:keys [:ssh.key/id]}] id)))))
 
 
 (defn setup-ssh
   [{:as opts}]
   {:pre [(shell/find-executable "pass")
          (shell/find-executable "gopass")]}
-  (fetch-ssh-key-from-pass opts)
+  (fetch-ssh-keypairs-from-pass opts)
   (ssh-keygen-all opts)
   (generate-ssh-config-file opts))
 

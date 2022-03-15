@@ -1,7 +1,13 @@
 {
  :linters
- {:unused-namespace
+ {:unused-binding
+  {:exclude-destructured-keys-in-fn-args true
+   :exclude-destructured-as              true}
+
+
+  :unused-namespace
   {:exclude [
+             clojure.spec.alpha
              clojure.java.io
              clojure.java.shell
              clojure.string
