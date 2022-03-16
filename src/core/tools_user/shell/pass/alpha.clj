@@ -34,3 +34,8 @@
                (.getPath (jio/as-file to)))]
     (println "gopass" "fscopy" from to)
     (shell/exit! (jsh/sh "gopass" "fscopy" from to))))
+
+
+(defn git-pull
+  ([]
+   (shell/exit! (jsh/sh "pass" "git" "pull" "origin" "master"))))

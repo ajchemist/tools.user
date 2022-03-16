@@ -118,13 +118,14 @@
     :or   {hosts-edn-file (jio/file (System/getProperty "user.home") ".ssh" "hosts.edn")}}]
   {:pre [(shell/find-executable "pass")
          (shell/find-executable "gopass")]}
+  (println " * fetch ssh-keypairs from *passwordstore*")
+  (pass/git-pull)
   (run!
     (fn [{:keys [:ssh.keygen/file :pass/pass-name]}]
       (try
-        (jio/make-parents (jio/as-file file))
-        (pass/fscopy
-          (ssh-keypair-pass-name pass-name)
-          (jio/file file))
+        (when-let [pass-name' (ssh-keypair-pass-name pass-name)]
+          (jio/make-parents (jio/as-file file))
+          (pass/fscopy pass-name' (jio/file file)))
         (catch Throwable e (stacktrace/print-stack-trace e))))
     (->> (:ssh/keypairs (ssh.config/read-hosts-edn-file hosts-edn-file))
       (map prep-ssh-keypair-options)
@@ -143,6 +144,7 @@
     :or   {hosts-edn-file (jio/file (System/getProperty "user.home") ".ssh" "hosts.edn")}}]
   {:pre [(shell/find-executable "pass")
          (shell/find-executable "gopass")]}
+  (println " * ssh-keygen all :ssh/keypairs from hosts.edn")
   (run!
     (fn [{:keys [:ssh.keygen/overwrite
                 :pass/pass-name]
