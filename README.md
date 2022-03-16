@@ -7,7 +7,7 @@ author: ajchemist
 
 
 ``` shell
-clojure -Ttools install io.github.ajchemist/tools.user '{:git/sha "cad94937514505a451cce78fbf8ac3aaae54d4c8"}' :as tools.user
+clojure -Ttools install io.github.ajchemist/tools.user '{:git/sha "d0a22514e7fcd3bdec7927d13d3846c67c95b7ab"}' :as tools.user
 ```
 
 
