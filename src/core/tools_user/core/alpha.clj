@@ -68,7 +68,7 @@
          :rounds    (:ssh.keygen/rounds opts)
          :bits      (:ssh.keygen/bits opts)
          :file      file
-         :comment   (:ssh.keygen/comment opts)
+         :comment   (:ssh.keygen/comment opts (str id))
          :overwrite true}
     $
     (case (:type $)
