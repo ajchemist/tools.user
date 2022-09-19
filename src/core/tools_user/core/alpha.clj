@@ -89,7 +89,7 @@
     (do
       (ssh/keygen $)
       (when-not (:pass/skip? opts)
-        (pass/fscopy file pass-name)))))
+        (pass/fscopy-from-file file pass-name)))))
 
 
 (defn ssh-keygen
@@ -125,7 +125,7 @@
       (try
         (when-let [pass-name' (ssh-keypair-pass-name pass-name)]
           (jio/make-parents (jio/as-file file))
-          (pass/fscopy pass-name' (jio/file file)))
+          (pass/fscopy-from-vault pass-name' (jio/file file)))
         (catch Throwable e (stacktrace/print-stack-trace e))))
     (->> (:ssh/keypairs (ssh.config/read-hosts-edn-file hosts-edn-file))
       (map prep-ssh-keypair-options)

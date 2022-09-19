@@ -2,7 +2,6 @@
   (:require
    [clojure.string :as str]
    [clojure.java.io :as jio]
-   [user.java.io.alpha :as u.jio]
    [clojure.java.shell :as jsh]
    [tools-user.shell.alpha :as shell]
    ))
@@ -24,14 +23,18 @@
   (shell/exit! (jsh/sh "pass" "generate" pass-name)))
 
 
-(defn fscopy
+(defn fscopy-from-file
   [from to]
-  (let [from (if (u.jio/exists? from)
-               (.getPath (jio/as-file from))
-               from)
-        to   (if (u.jio/exists? from)
-               to
-               (.getPath (jio/as-file to)))]
+  (let [from (.getPath (jio/as-file from))
+        to   (str to)]
+    (println "gopass" "fscopy" from to)
+    (shell/exit! (jsh/sh "gopass" "fscopy" from to))))
+
+
+(defn fscopy-from-vault
+  [from to]
+  (let [from (str from)
+        to   (.getPath (jio/as-file to))]
     (println "gopass" "fscopy" from to)
     (shell/exit! (jsh/sh "gopass" "fscopy" from to))))
 
