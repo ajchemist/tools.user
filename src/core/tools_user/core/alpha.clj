@@ -116,6 +116,13 @@
 ;; ** Fetch keypairs *passwordstore* -> *local(~/.ssh/keypairs)*
 
 
+(defn read-ssh-keypairs
+  [hosts-edn-file]
+  (->> (:ssh/keypairs (ssh.config/read-hosts-edn-file hosts-edn-file))
+    (map prep-ssh-keypair-options)
+    ))
+
+
 (defn fetch-ssh-keypairs-from-pass
   [{:keys [hosts-edn-file]
     :or   {hosts-edn-file (jio/file (System/getProperty "user.home") ".ssh" "hosts.edn")}}]
@@ -133,9 +140,7 @@
             (pass/fscopy-from-vault (str pass-name' ".pub") (jio/file (str file ".pub")))) ; pub key
           )
         (catch Throwable e (stacktrace/print-stack-trace e))))
-    (->> (:ssh/keypairs (ssh.config/read-hosts-edn-file hosts-edn-file))
-      (map prep-ssh-keypair-options)
-      (sort-by (fn [{:keys [:ssh.key/id]}] id)))))
+    (sort-by (fn [{:keys [:ssh.key/id]}] id) (read-ssh-keypairs hosts-edn-file))))
 
 
 ;; ** Keygen keypairs and push it -> *passwordstore*
