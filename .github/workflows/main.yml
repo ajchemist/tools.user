@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - '.github/workflows/main.yml'
+      - "deps.edn"
       - 'src/core/**/*.clj'
       - 'src/core/**/*.cljs'
       - 'src/core/**/*.cljc'
@@ -19,7 +20,7 @@ on:
 
 
 env:
-  clojure-cli: "1.10.3.1087"
+  clojure-cli: "1.11.1.1165"
   java-version: '17'
   library: io.github.ajchemist/tools.user
 
@@ -30,37 +31,29 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        clojure: [ "1.10" ]
+        clojure: [ "1.11" ]
     name: test @ CLJ = ${{ matrix.clojure }}
     steps:
-      - uses: actions/checkout@v2
-      - name: Cache local maven repository
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/deps.edn') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-      - name: Cache gitlibs
-        uses: actions/cache@v2
-        with:
-          path: ~/.gitlibs
-          key: ${{ runner.os }}-gitlibs-${{ hashFiles('**/deps.edn') }}
-          restore-keys: |
-            ${{ runner.os }}-gitlibs-
-
-
+      - uses: actions/checkout@v3
       - name: Setup java
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: ${{ env.java-version }}
-
-
       - name: Set up clojure-cli
-        uses: DeLaGuardo/setup-clojure@master
+        uses: DeLaGuardo/setup-clojure@9.4
         with:
           cli: ${{ env.clojure-cli }}
+      - name: Cache clojure dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+            ~/.deps.clj
+          key: cljdeps-${{ runner.os }}-${{ hashFiles('**/deps.edn') }}
+          restore-keys: |
+            cljdeps-${{ runner.os }}-
 
 
       - name: Test runner

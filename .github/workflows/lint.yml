@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - '.github/workflows/lint.yml'
+      - '.clj-kondo/config.edn'
       - 'src/core/**/*.clj'
       - 'src/core/**/*.cljs'
       - 'src/core/**/*.cljc'
@@ -15,22 +16,17 @@ on:
       - master
 
 
-
-env:
-  java-version: '17'
-
-
 jobs:
   clj-kondo:
     name: Lint with clj-kondo
     if: "!(contains(github.event.head_commit.message, 'ci skip') || contains(github.event.head_commit.message, 'skip ci'))"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup clj-kondo
         uses: DeLaGuardo/setup-clj-kondo@master
         with:
-          version: '2022.03.04'
+          version: '2022.09.08'
       - name: Lint
         run: |
           clj-kondo --lint src/core
