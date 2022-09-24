@@ -14,15 +14,11 @@ clojure -Ttools install io.github.ajchemist/tools.user '{:git/sha "8837fe3304063
 # SSH
 
 
-1. *passwordstore* is ssh private key store.
+1. *passwordstore* is ssh keypairs.
    - fetch from *passwordstore*
    - keygen and push to *passwordstore*
    - `gopass fscopy`
-   - private key exists in =~/.ssh/keypairs= is just local cache
-
-
-2. =~/.ssh/keypairs= is ssh public key store.
-   - separated git repository
+   - keypairs exists in =~/.ssh/keypairs= is just local cache
 
 
 ## Fetch keypairs from *passwordstore*
