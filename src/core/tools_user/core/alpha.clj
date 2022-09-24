@@ -79,12 +79,14 @@
       (assoc $ :nopassphrase true)
       (let [passphrase-pass-name (str pass-name "/passphrase")
             passphrase           (pass/show passphrase-pass-name)
-            passphrase           (if passphrase
-                                   passphrase
+            passphrase           (cond
+                                   (nil? passphrase)
                                    (do
                                      (println "pass" "generate" passphrase-pass-name)
                                      (pass/generate passphrase-pass-name)
-                                     (pass/show passphrase-pass-name)))]
+                                     (pass/show passphrase-pass-name))
+
+                                   :else passphrase)]
         (assoc $ :passphrase passphrase)))
     (do
       (ssh/keygen $)
@@ -125,6 +127,7 @@
       (try
         (when-let [pass-name' (ssh-keypair-pass-name pass-name)]
           (jio/make-parents (jio/as-file file))
+          (pass/fscopy-from-vault pass-name' (jio/file file))
           (pass/fscopy-from-vault pass-name' (jio/file file)))
         (catch Throwable e (stacktrace/print-stack-trace e))))
     (->> (:ssh/keypairs (ssh.config/read-hosts-edn-file hosts-edn-file))
@@ -169,5 +172,36 @@
   (generate-ssh-config-file opts))
 
 
+(def ^:privates verbose-levels
+  {:trace 0
+   :debug 1
+   :info  2
+   :warn  3
+   :error 4
+   :fatal 5
+   :off   6})
+
+
+(defn println-tap
+  [o]
+  (try
+    (when (vector? o)
+      (let [[level & message] o
+
+            prop  (System/getProperty "verbose.level")
+            pivot (cond
+                    (nil? prop) 2
+                    :else       (parse-long prop))]
+        (when (<= pivot (get verbose-levels level) )
+          (apply println message))))
+    (catch Throwable _)))
+
+
+(add-tap println-tap)
+
+
 (comment
+  (tap> [:info :hello])
+  (tap> [:trace :hello])
+  (remove-tap println-tap)
   )

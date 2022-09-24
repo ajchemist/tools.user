@@ -10,9 +10,10 @@
 (defn show
   "Return non-nil only if the secret exists in `pass-name`"
   [pass-name]
-  (let [{:keys [exit out] :as sh-return} (jsh/sh "pass" "show" pass-name)]
+  (let [{:keys [exit out err] :as sh-return} (jsh/sh "pass" "show" pass-name)]
+    (tap> [:info err])
     (if (zero? exit)
-      (if (str/index-of out "└── ")
+      (if (str/index-of out (str pass-name "\n├── ")) ; dir entry check
         nil
         (nth (str/split (:out sh-return) #"\n" 2) 0))
       nil)))
@@ -27,7 +28,7 @@
   [from to]
   (let [from (.getPath (jio/as-file from))
         to   (str to)]
-    (println "gopass" "fscopy" from to)
+    (tap> [:info "gopass" "fscopy" from to])
     (shell/exit! (jsh/sh "gopass" "fscopy" from to))))
 
 
@@ -35,7 +36,7 @@
   [from to]
   (let [from (str from)
         to   (.getPath (jio/as-file to))]
-    (println "gopass" "fscopy" from to)
+    (tap> [:info "gopass" "fscopy" from to])
     (shell/exit! (jsh/sh "gopass" "fscopy" from to))))
 
 
