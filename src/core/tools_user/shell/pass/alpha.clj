@@ -21,6 +21,7 @@
 
 (defn generate
   [pass-name]
+  (tap> [:info "pass" "generate" pass-name])
   (shell/exit! (jsh/sh "pass" "generate" pass-name)))
 
 
