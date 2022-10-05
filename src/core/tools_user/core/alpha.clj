@@ -281,15 +281,14 @@
 
 
 (defn read-ssh-keypairs
-  [hosts-edn-file]
-  (->> (:ssh/keypairs (ssh.config/read-hosts-edn-file hosts-edn-file))
-    (map prep-ssh-keypair-options)
-    ))
+  [keypairs-edn-file]
+  (->> (edn/read (PushbackReader. (jio/reader keypairs-edn-file)))
+    (map prep-ssh-keypair-options)))
 
 
 (defn fetch-ssh-keypairs-from-pass
-  [{:keys [hosts-edn-file]
-    :or   {hosts-edn-file (jio/file (System/getProperty "user.home") ".ssh" "hosts.edn")}}]
+  [{:keys [keypairs-edn-file]
+    :or   {keypairs-edn-file (jio/file (System/getProperty "user.home") ".ssh" "keypairs.edn")}}]
   {:pre [(shell/find-executable "pass")
          (shell/find-executable "gopass")]}
   (println " * fetch ssh-keypairs from *passwordstore*")
@@ -304,7 +303,7 @@
             (pass/fscopy-from-vault (str pass-name' ".pub") (jio/file (str file ".pub")))) ; pub key
           )
         (catch Throwable e (stacktrace/print-stack-trace e))))
-    (sort-by (fn [{:keys [:ssh.key/id]}] id) (read-ssh-keypairs hosts-edn-file))))
+    (sort-by (fn [{:keys [:ssh.key/id]}] id) (read-ssh-keypairs keypairs-edn-file))))
 
 
 ;; ** Keygen keypairs and push it -> *passwordstore*
@@ -315,8 +314,8 @@
 
   private-key exists in passwordstore -> do nothing
   not exist in passwordstore -> ssh-keygen-1 -> fscopy key-file ssh/keypairs/:pass/pass-name"
-  [{:keys [hosts-edn-file]
-    :or   {hosts-edn-file (jio/file (System/getProperty "user.home") ".ssh" "hosts.edn")}}]
+  [{:keys [keypairs-edn-file]
+    :or   {keypairs-edn-file (jio/file (System/getProperty "user.home") ".ssh" "keypairs.edn")}}]
   {:pre [(shell/find-executable "pass")
          (shell/find-executable "gopass")]}
   (println " * ssh-keygen all :ssh/keypairs from hosts.edn")
@@ -330,8 +329,7 @@
           (when overwrite
             (println "[overwrite]:" pass-name))
           (ssh-keygen-1 options))))
-    (->> (:ssh/keypairs (ssh.config/read-hosts-edn-file hosts-edn-file))
-      (map prep-ssh-keypair-options)
+    (->> (read-ssh-keypairs keypairs-edn-file)
       (sort-by (fn [{:keys [:ssh.key/id]}] id)))))
 
 
