@@ -1,3 +1,4 @@
+.lsp/.cache
 .cpcache
 .clj-kondo/.cache
 .lsp/.cache
@@ -5,3 +6,6 @@
 
 
 /target
+
+
+.github/secrets.pass.edn

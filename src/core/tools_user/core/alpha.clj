@@ -109,33 +109,40 @@
     :as   opts}]
   {:pre [(qualified-ident? ident)
          (string? email)]}
-  (let [passphrase-pass-name (or passphrase-pass-name (str pass-name "/passphrase"))
-        passphrase           (pass/show passphrase-pass-name)
-        passphrase           (cond
-                               (nil? passphrase)
-                               (do
-                                 (pass/generate passphrase-pass-name)
-                                 (pass/show passphrase-pass-name))
+  (as-> (-> (reduce-kv
+              (fn [m k v]
+                (if (= (namespace k) "gpg.key")
+                  (assoc m k v)
+                  m))
+              {}
+              opts)
+          (update :gpg.key/passphrase
+            (fn [passphrase]
+              (or
+                passphrase
+                (when-not no-protection
+                  (let [passphrase-pass-name (or passphrase-pass-name (str pass-name "/passphrase"))
+                        passphrase           (pass/show passphrase-pass-name)]
+                    (cond
+                      (nil? passphrase)
+                      (do
+                        (pass/generate passphrase-pass-name)
+                        (pass/show passphrase-pass-name))
 
-                               :else passphrase)
-        opts' (-> (reduce-kv
-                    (fn [m k v]
-                      (if (= (namespace k) "gpg.key")
-                        (assoc m k v)
-                        m))
-                    {}
-                    opts)
-                (update :gpg.key/real #(or % (str (namespace ident) "/" (name ident))))
-                (cond->
-                  (and (not no-protection)
-                       (string? passphrase)
-                       (not (str/blank? passphrase))) (assoc :gpg.key/passphrase passphrase)))]
-    (-> opts'
-      (update-keys name)
-      (gpg/genkey))
-    (when-not (:pass/skip? opts)
-      (gpg-export (assoc opts' :pass/pass-name pass-name))
-      (gpg-export-secret-key (assoc opts' :pass/pass-name pass-name)))))
+                      :else passphrase))))))
+          (update :gpg.key/real #(or % (str (namespace ident) "/" (name ident)))))
+    {:keys [:gpg.key/passphrase] :as opts'}
+    (cond-> opts'
+      (and (not no-protection)
+           (string? passphrase)
+           (not (str/blank? passphrase))) (assoc :gpg.key/passphrase passphrase))
+    (do
+      (-> opts'
+        (update-keys #(keyword (name %)))
+        (gpg/genkey))
+      (when-not (:pass/skip? opts)
+        (gpg-export (assoc opts' :pass/pass-name pass-name))
+        (gpg-export-secret-key (assoc opts' :pass/pass-name pass-name))))))
 
 
 (defn gpg-genkey
@@ -340,6 +347,9 @@
   (fetch-ssh-keypairs-from-pass opts)
   (ssh-keygen-all opts)
   (generate-ssh-config-file opts))
+
+
+;; * main
 
 
 (def ^:privates verbose-levels
