@@ -7,10 +7,10 @@
    [clojure.java.io :as jio]
    [tools-user.util :as util]
    [tools-user.shell.alpha :as shell]
-   [tools-user.shell.pass.alpha :as pass]
    [tools-user.shell.ssh.alpha :as ssh]
    [tools-user.ssh.config.alpha :as ssh.config]
    [tools-user.shell.gpg.alpha :as gpg]
+   [ajchemist.passwordstore.core.alpha :as pass]
    )
   (:import
    java.io.PushbackReader

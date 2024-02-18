@@ -8,8 +8,9 @@
 
  :deps
  {
-  io.github.ajchemist/user.java.io {:mvn/version "2021.351.9469"}
-  org.clojure/clojure              {:mvn/version "1.11.1"}
+  io.github.ajchemist/user.java.io            {:mvn/version "2021.351.9469"}
+  io.github.ajchemist/passwordstore.clj.alpha {:mvn/version "2024.49.25157"}
+  org.clojure/clojure                         {:mvn/version "1.11.1"}
   }
 
 

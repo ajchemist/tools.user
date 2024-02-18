@@ -2,7 +2,7 @@
   (:require
    [clojure.java.io :as jio]
    [tools-user.core.alpha :as tools-user]
-   [tools-user.shell.pass.alpha :as pass]
+   [ajchemist.passwordstore.core.alpha :as pass]
    ))
 
 
