@@ -31,35 +31,38 @@
            length     4096
            sub-type   1
            sub-length 4096
-           expire     "1y"}}]
-  (let [tcoll-0 (transient [])
-        tcoll   (transient {"Key-Type" type "Key-Length" length "Subkey-Type" sub-type "Subkey-Length" sub-length})]
-    (when dry-run
-      (-> tcoll-0 (conj! "%dry-run")))
-    (when no-protection
-      (-> tcoll-0 (conj! "%no-protection")))
-    (when real
-      (-> tcoll (assoc! "Name-Real" real)))
-    (when email
-      (-> tcoll (assoc! "Name-Email" email)))
-    (when comment
-      (-> tcoll (assoc! "Name-Comment" comment)))
-    (when expire
-      (-> tcoll (assoc! "Expire-Date" expire)))
-    (when (and (not no-protection) passphrase)
-      (-> tcoll (assoc! "Passphrase" passphrase)))
+           expire     "1y"}
+    :as   opts}]
+  (let [coll-0  []
+        coll    {}
+        coll-0' (cond-> coll-0
+                  dry-run       (conj "%dry-run")
+                  no-protection (conj "%no-protection")
+                  true          (conj ""))
+        coll'   (cond-> coll
+                  real                                 (assoc "Name-Real" real)
+                  email                                (assoc "Name-Email" email)
+                  comment                              (assoc "Name-Comment" comment)
+                  expire                               (assoc "Expire-Date" expire)
+                  (and (not no-protection) passphrase) (assoc "Passphrase" passphrase))]
+    (tap> coll')
     (reduce-kv
       (fn [ret k v] (str ret k ": " v "\n"))
-      (str/join
-        "\n"
-        (persistent! (conj! tcoll-0 "")))
-      (persistent! tcoll))))
+      (str
+        (str/join "\n" coll-0')
+        "Key-Type: " type "\n"
+        "Key-Length: " length "\n"
+        "Subkey-Type: " sub-type "\n"
+        "Subkey-Length: " sub-length "\n")
+      coll')))
 
 
 (defn genkey
   [opts]
-  (let [tmp-file (File/createTempFile "gpg-genkey-unattended" "")
-        _        (spit tmp-file (render-unattended-genkey-script opts))]
+  (let [tmp-file       (File/createTempFile "gpg-genkey-unattended" "")
+        script-content (render-unattended-genkey-script opts)
+        _              (spit tmp-file script-content)]
+    (tap> [:gpg/genkey {:script script-content}])
     (shell/exit! (jsh/sh "gpg" "--full-generate-key" "--batch" (str tmp-file)))))
 
 

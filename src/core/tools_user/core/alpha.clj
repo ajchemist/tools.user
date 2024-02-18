@@ -111,6 +111,8 @@
          (string? email)]}
   (as-> (-> (reduce-kv
               (fn [m k v]
+                ;; remove all keys except gpg.key/*
+                ;; make gpg key options
                 (if (= (namespace k) "gpg.key")
                   (assoc m k v)
                   m))
@@ -140,9 +142,11 @@
       (-> opts'
         (update-keys #(keyword (name %)))
         (gpg/genkey))
-      (when-not (:pass/skip? opts)
-        (gpg-export (assoc opts' :pass/pass-name pass-name))
-        (gpg-export-secret-key (assoc opts' :pass/pass-name pass-name))))))
+      (let [opts'' (merge opts opts')]
+        ;; recover original options e.g. :pass/*
+        (when-not (:pass/skip? opts)
+          (gpg-export opts'')
+          (gpg-export-secret-key opts''))))))
 
 
 (defn gpg-genkey
