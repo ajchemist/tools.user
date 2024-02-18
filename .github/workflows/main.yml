@@ -20,7 +20,7 @@ on:
 
 
 env:
-  clojure-cli: "1.11.1.1165"
+  clojure-cli: "1.11.1.1347"
   java-version: '17'
   library: io.github.ajchemist/tools.user
 
@@ -54,6 +54,32 @@ jobs:
           key: cljdeps-${{ runner.os }}-${{ hashFiles('**/deps.edn') }}
           restore-keys: |
             cljdeps-${{ runner.os }}-
+
+
+      - name: Install gopass
+        run: |
+          curl https://packages.gopass.pw/repos/gopass/gopass-archive-keyring.gpg | sudo tee /usr/share/keyrings/gopass-archive-keyring.gpg >/dev/null
+          cat << EOF | sudo tee /etc/apt/sources.list.d/gopass.sources
+          Types: deb
+          URIs: https://packages.gopass.pw/repos/gopass
+          Suites: stable
+          Architectures: all amd64 arm64 armhf
+          Components: main
+          Signed-By: /usr/share/keyrings/gopass-archive-keyring.gpg
+          EOF
+          sudo apt update
+          sudo apt install gopass gopass-archive-keyring
+          gpg --batch --gen-key <<EOF
+          %no-protection
+          Key-Type: 1
+          Key-Length: 2048
+          Subkey-Type: 1
+          Subkey-Length: 2048
+          Name-Real: Github Actions
+          Name-Email: github-actions@example.com
+          Expire-Date: 0
+          EOF
+          gopass init
 
 
       - name: Test runner

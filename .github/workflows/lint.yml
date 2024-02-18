@@ -26,7 +26,7 @@ jobs:
       - name: Setup clj-kondo
         uses: DeLaGuardo/setup-clj-kondo@master
         with:
-          version: '2022.09.08'
+          version: '2024.02.12'
       - name: Lint
         run: |
           clj-kondo --lint src/core
